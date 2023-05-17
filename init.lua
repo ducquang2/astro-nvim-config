@@ -41,12 +41,35 @@ return {
       },
       disabled = { -- disable formatting capabilities for the listed language servers
         -- disable lua_ls formatting capability if you want to use StyLua to format your lua code
-        -- "lua_ls",
+        "lua_ls",
+        "tsserver",
+        "eslint"
       },
       timeout_ms = 1000, -- default format timeout
       -- filter = function(client) -- fully override the default formatting function
       --   return true
       -- end
+    },
+    tsserver = function(opts)
+      opts.root_dir = require("lspconfig.util").root_pattern("package.json")
+      return opts
+    end,
+    -- For eslint:
+    eslint = function(opts)
+      opts.root_dir = require("lspconfig.util").root_pattern("package.json", ".eslintrc.json", ".eslintrc.js", ".eslintrc")
+      return opts
+    end, 
+    setup_handlers = {
+      eslint = function(_, opts)
+        require("lspconfig").eslint.setup { 
+          on_attach = function(client, bufnr)
+            vim.api.nvim_create_autocmd("BufWritePre", {
+              buffer = bufnr,
+              command = "EslintFixAll",
+            })
+          end
+        } 
+      end
     },
     -- enable servers that you already have installed without mason
     servers = {
@@ -65,10 +88,91 @@ return {
     },
   },
 
+  -- set up UI icons
+  icons = {
+    ActiveLSP = "",
+    ActiveTS = " ",
+    BufferClose = "",
+    DapBreakpoint = "",
+    DapBreakpointCondition = "",
+    DapBreakpointRejected = "",
+    DapLogPoint = "",
+    DapStopped = "",
+    DefaultFile = "",
+    Diagnostic = "",
+    DiagnosticError = "",
+    DiagnosticHint = "",
+    DiagnosticInfo = "",
+    DiagnosticWarn = "",
+    Ellipsis = "",
+    FileModified = "",
+    FileReadOnly = "",
+    FoldClosed = "",
+    FoldOpened = "",
+    FolderClosed = "",
+    FolderEmpty = "",
+    FolderOpen = "",
+    Git = "",
+    GitAdd = "",
+    GitBranch = "",
+    GitChange = "",
+    GitConflict = "",
+    GitDelete = "",
+    GitIgnored = "",
+    GitRenamed = "",
+    GitStaged = "",
+    GitUnstaged = "",
+    GitUntracked = "",
+    LSPLoaded = "",
+    LSPLoading1 = "",
+    LSPLoading2 = "",
+    LSPLoading3 = "",
+    MacroRecording = "",
+    Paste = "",
+    Search = "",
+    Selected = "",
+    TabClose = "",
+  },
+  plugins = {
+    {
+      "onsails/lspkind.nvim",
+      opts = function(_, opts)
+        -- use codicons preset
+        opts.preset = "codicons"
+        -- set some missing symbol types
+        opts.symbol_map = {
+          Array = "",
+          Boolean = "",
+          Key = "",
+          Namespace = "",
+          Null = "",
+          Number = "",
+          Object = "",
+          Package = "",
+          String = "",
+        }
+        return opts
+      end,
+    },
+    "jose-elias-alvarez/typescript.nvim", -- add lsp plugin
+    {
+      "nvim-treesitter/nvim-treesitter",
+      opts = {
+        ensure_installed = { "graphql", "heex", "elixir" }
+      }
+    },
+    {
+      "williamboman/mason-lspconfig.nvim",
+      opts = {
+        ensure_installed = { "tsserver", "eslint", "elixirls" }, -- automatically install lsp
+      },
+    },
+  },
+
   -- Configure require("gitsigns").setup()
   -- require('gitsigns').setup {
   gitsigns = {
-    current_line_blame = true, -- Toggle with `:Gitsigns toggle_current_line_blame`
+    -- current_line_blame = true, -- Toggle with `:Gitsigns toggle_current_line_blame`
     current_line_blame_opts = {
       virt_text = true,
       virt_text_pos = 'eol', -- 'eol' | 'overlay' | 'right_align'
